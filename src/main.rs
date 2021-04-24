@@ -16,6 +16,7 @@ use treasure_qrcode::create_qr_code;
 use treasure::Treasure;
 use rocket::Data;
 use std::fs::File;
+use std::io::prelude::*;
 use rocket::http::{RawStr, Method};
 
 mod crypto;
@@ -36,8 +37,8 @@ fn create_treasure_key() -> Result<Json<UniqueCodeJson>> {
 
     let first_key = UniqueCodeJson {
         secret_key: first_key.secret_key.clone(),
-        // Argument is the size, bigger number means smaller size on the page
-        qrcode: first_key.qrcode.to_svg_string(0), 
+        // 50 is the size, bigger number means smaller size on the page
+        qrcode: first_key.qrcode.to_svg_string(50), 
         url: first_key.url.clone(),
     };
 
@@ -46,16 +47,15 @@ fn create_treasure_key() -> Result<Json<UniqueCodeJson>> {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct PlantInfoRequest {
-    /// An image, base64 encoded
+    /// An image, bech32 encoded
     image: String,
     /// A private key, bech32 encoded
     ///
     /// FIXME: Should be a pub-key, derived on the client
-    /// FIXME: Rename to secret_key
     private_key: String,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 struct PlantInfoResponse {
     return_url: String,
 }
@@ -74,6 +74,9 @@ fn plant_treasure_with_key(plant_info: Json<PlantInfoRequest>) -> Result<Json<Pl
     println!("{:#?}", &plant_info);
     // plant_info.stream_to_file(Path::new(&filename))?;
 
+    let mut file = File::create(filename)?;
+    file.write_all(serde_json::to_string(&plant_info.into_inner()).unwrap().as_bytes());
+    
     let res = PlantInfoResponse {
         return_url,
     };
@@ -142,13 +145,11 @@ fn static_page(page: String) -> Template {
 fn main() {
     let css_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/static/css");
     let js_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/static/js");
-    let images_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/static/images");
     let wasm_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/wasm/pkg");
     rocket::ignite()
         .attach(Template::fairing())
         .mount("/css", StaticFiles::from(css_dir))
         .mount("/js", StaticFiles::from(js_dir))
-        .mount("/images", StaticFiles::from(images_dir))
         .mount("/wasm/pkg", StaticFiles::from(wasm_dir))
         .mount("/", routes![
             root,
