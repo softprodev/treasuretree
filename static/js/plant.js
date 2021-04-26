@@ -1,14 +1,14 @@
-let treasureImageEncoded = null;
-let treasureClaimUrl = null;
-let secretKey = null;
-let publicKey = null;
-let signature = null;
+console.assert(typeof treasureClaimUrl != "undefined");
+console.assert(typeof secretKey != "undefined");
+console.assert(typeof publicKey != "undefined");
+
+
+let treasureImageBlob = null;
 let treasurePlanted = false;
 
 let plantButton = document.getElementById("plant-button");
 
 console.assert(plantButton);
-
 
 let imageUploadButton = document.getElementById("image-upload-button");
 let useTestImageButton = document.getElementById("use-test-image-button")
@@ -24,7 +24,7 @@ imageUploadButton.addEventListener("change", async () => {
 
     plantButton.disabled = true;
 
-    treasureImageEncoded = null;
+    treasureImageBlob = null;
     imageElt.src = "";
     imageElt.classList.add("no-display");
 
@@ -46,7 +46,7 @@ imageUploadButton.addEventListener("change", async () => {
         imageElt.src = URL.createObjectURL(blob);
         imageElt.classList.remove("no-display");
 
-        treasureImageEncoded = btoa(blob);
+        treasureImageBlob = blob;
 
         maybeEnablePlantButton();
     } finally {
@@ -60,7 +60,7 @@ useTestImageButton.addEventListener("click", async () => {
 
     plantButton.disabled = true;
 
-    treasureImageEncoded = null;
+    treasureImageBlob = null;
     imageElt.scr = "";
     imageElt.classList.add("no-display");
 
@@ -81,7 +81,7 @@ useTestImageButton.addEventListener("click", async () => {
         imageElt.src = URL.createObjectURL(blob);
         imageElt.classList.remove("no-display");
 
-        treasureImageEncoded = btoa(blob);
+        treasureImageBlob = blob;
 
         maybeEnablePlantButton();
     } finally {
@@ -91,138 +91,6 @@ useTestImageButton.addEventListener("click", async () => {
     }
 });
 
-
-let qrScanButton = document.getElementById("qrscan-button");
-let qrCancelButton = document.getElementById("qrscan-cancel-button");
-let secretKeyInput = document.getElementById("secret-key");
-let treasureClaimUrlElt = document.getElementById("treasure-claim-url");
-let publicKeyElt = document.getElementById("public-key");
-let signatureElt = document.getElementById("signature");
-
-console.assert(qrScanButton);
-console.assert(qrCancelButton);
-console.assert(secretKeyInput);
-console.assert(treasureClaimUrlElt);
-console.assert(publicKeyElt);
-console.assert(signature);
-
-QrScanner.WORKER_PATH = "js/lib/qr-scanner-worker.min.js";
-
-let stopScanning = null;
-
-qrScanButton.addEventListener("click", async () => {
-
-    let video = document.getElementById("qr-video");
-
-    console.assert(video);    
-
-    plantButton.disabled = true;
-
-    treasureClaimUrlElt.innerText = null;
-    secretKeyInput.value = null;
-    publicKeyElt.innerText = null;
-    signatureElt.value = null;
-
-    treasureClaimUrl = null;
-    secretKey = null;
-    publicKey = null;
-    signature = null;
-
-    let wasm = await initWasm();
-
-    const qrScanner = new QrScanner(video, (result) => {
-        console.log(result);
-
-        // Don't do async work after this to avoid races updated the UI
-        stopScanning();
-
-        let url = result;
-        let sanityCheck = wasm.sanity_check_url(url);
-
-        if (sanityCheck === false) {
-            console.error("QR code looks bogus");
-            // TODO
-            return;
-        }
-
-        let secretKey_ = wasm.secret_url_to_secret_key(url);
-        let publicKey_ = wasm.secret_url_to_public_key(url);
-
-        if (secretKey_ == null || publicKey_ == null) {
-            console.error("unable to decode key from URL");
-            // TODO
-            return;
-        }
-
-        treasureClaimUrlElt.innerText = url;
-        secretKeyInput.value = secretKey_;
-        publicKeyElt.innerText = publicKey_;
-
-        treasureClaimUrl = url;
-        secretKey = secretKey_;
-        publicKey = publicKey_;
-        
-    }, (error) => {
-        console.error(error);
-    });
-
-    
-    qrScanButton.disabled = true;
-    qrCancelButton.disabled = false;
-    secretKeyInput.disabled = true;
-    video.classList.remove("no-display");
-
-    stopScanning = () => {
-        qrScanner.stop();
-        qrScanner.destroy();
-        qrScanButton.disabled = false;
-        qrCancelButton.disabled = true;
-        secretKeyInput.disabled = false;
-        video.classList.add("no-display");
-        maybeEnablePlantButton();
-    }
-
-    qrScanner.start();
-});
-
-qrCancelButton.addEventListener("click", async () => {
-    stopScanning();
-});
-
-secretKeyInput.addEventListener("input", async () => {
-
-    let wasm = await initWasm();
-
-    plantButton.disabled = true;
-
-    treasureClaimUrlElt.innerText = null;
-    publicKeyElt.innerText = null;
-
-    treasureClaimUrl = null;
-    secretKey = null;
-    publicKey = null;
-
-    let secretKey_ = secretKeyInput.value;
-    let publicKey_ = wasm.secret_key_to_public_key(secretKey_);
-    let treasureClaimUrl_ = wasm.secret_key_to_secret_url(secretKey_);
-
-    if (publicKey_ == null || treasureClaimUrl_ == null) {
-        console.error("unable to decode key");
-        // TODO
-        return;
-    }
-
-    publicKeyElt.innerText = publicKey_;
-    treasureClaimUrlElt.innerText = treasureClaimUrl_;
-
-    treasureClaimUrl = treasureClaimUrl_;
-    secretKey = secretKey_;
-    publicKey = publicKey_;
-
-    maybeEnablePlantButton();
-});
-
-
 plantButton.addEventListener("click", async () => {
 
     let plantSpinner = document.getElementById("plant-spinner");
@@ -231,13 +99,24 @@ plantButton.addEventListener("click", async () => {
 
     plantButton.disabled = true;
 
-    console.assert(treasureImageEncoded);
+    console.assert(treasureImageBlob);
     console.assert(secretKey);
 
     plantSpinner.classList.remove("no-display");
 
     try {
-        let treasureInfo = {
+        let encoder = new Promise((resolve) => {
+            let reader = new FileReader();
+            reader.readAsBinaryString(treasureImageBlob);
+            reader.addEventListener("loadend", () => {
+                let encoded = btoa(reader.result);
+                resolve(encoded);
+            });
+        });
+
+        let treasureImageEncoded = await encoder;
+
+        let requestInfo = {
             image: treasureImageEncoded,
             public_key: publicKey,
             signature: "test_signature"
@@ -249,7 +128,7 @@ plantButton.addEventListener("click", async () => {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(treasureInfo)
+            body: JSON.stringify(requestInfo)
         });
         console.log(response);
 
@@ -274,7 +153,7 @@ plantButton.addEventListener("click", async () => {
 
 function maybeEnablePlantButton() {
     let dataReady =
-        treasureImageEncoded &&
+        treasureImageBlob &&
         treasureClaimUrl &&
         secretKey &&
         publicKey;
@@ -282,4 +161,15 @@ function maybeEnablePlantButton() {
     if (dataReady && !treasurePlanted) {
         plantButton.disabled = false;
     }
+}
+
+
+/* These handlers are required by secren-scan.js */
+
+function onBeginSecretScan() {
+    plantButton.disabled = true;
+}
+
+function onEndSecretScan() {
+    maybeEnablePlantButton();
 }
