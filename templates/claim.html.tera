@@ -10,8 +10,6 @@ Claim a Treasure
 
 {% block scripts %}
 
-<script src="js/lib/qr-scanner.umd.min.js" defer></script>
-<script src="js/secret-scan.js" defer></script>
 <script src="js/claim.js" defer></script>
 
 {% endblock scripts %}
@@ -19,15 +17,9 @@ Claim a Treasure
 
 {% block body %}
 
-{% include "partials/secret-scan" %}
-
 <section>
 
-  <p>
-    <input type="button" id="claim-button" value="Claim Treasure" disabled>
-    <span id="claim-spinner" class="spinner no-display"></span>
-  </p>
-  <p id="claimed-message" class="success-message no-display">Treasure Claimed<p>
+  <p>claim</p>
 
 </section>
 

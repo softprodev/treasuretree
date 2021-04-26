@@ -76,10 +76,6 @@ pub fn decode_public_key(key: &str) -> Result<PublicKey> {
     Ok(key)
 }
 
-pub fn encode_signature(sig: &Signature) -> Result<String> {
-    panic!()
-}
-
 // Decodes a base64 encoded signature
 pub fn decode_signature(sig: &str) -> Result<Signature> {
     panic!()
