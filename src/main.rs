@@ -5,7 +5,7 @@
 extern crate rocket;
 
 use anyhow::{anyhow, bail, Result};
-use rocket::response::{content::Html, Responder, Content};
+use rocket::response::{content::Html, Responder};
 use rocket_contrib::{templates::Template, json::Json};
 use rocket_contrib::serve::StaticFiles;
 use serde::{Serialize, Deserialize};
@@ -15,11 +15,9 @@ use std::fmt;
 use treasure_qrcode::create_qr_code;
 use treasure::Treasure;
 use rocket::Data;
-use std::fs::{self, File, DirEntry, Metadata};
+use std::fs::{self, File};
 use std::io::prelude::*;
-use std::io::BufReader;
-use rocket::http::{RawStr, Method, ContentType};
-use std::time::SystemTime;
+use rocket::http::{RawStr, Method};
 
 mod crypto;
 mod treasure_qrcode;
@@ -105,26 +103,15 @@ fn retrieve_treasure(public_key: &RawStr) -> Result<Template> {
     panic!()
 }
 
-/// A treasure's image.
+/// A treasure's pic.
 ///
 /// The `public_key` is bech32 encoded.
 ///
 /// Need to set the mime/type.
 /// For now set to image/jpeg.
-#[get("/treasure-images/<public_key>")]
-fn retrieve_treasure_image(public_key: &RawStr) -> Result<Content<Vec<u8>>> {
-    let public_key = public_key.percent_decode()?;
-    let public_key = crypto::decode_public_key(&public_key)?;
-    let public_key = crypto::encode_public_key(&public_key)?;
-
-    let path = format!("treasure/{}", public_key);
-    let file = BufReader::new(File::open(path)?);
-    let record: PlantInfoRequest = serde_json::from_reader(file)?;
-    let encoded_image = record.image;
-    let decoded_image = base64::decode(&encoded_image)?;
-
-    // TODO: Correct content type
-    Ok(Content(ContentType::JPEG, decoded_image))
+#[get("/treasure-pics/<public_key>")]
+fn retrieve_treasure_pic(public_key: &RawStr) -> Result<File> {
+    panic!()
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -186,66 +173,6 @@ fn static_page(page: String) -> Template {
     Template::render(page, json!({}))
 }
 
-#[get("/recent", )]
-fn recent_page() -> Result<Template> {
-
-    fs::create_dir_all("treasure")?;
-
-    // This nightmare expression collects DirEntrys for every
-    // thing in the directory that is a file,
-    // and extracting the modify time,
-    // while also bubbling any possible errors.
-    // It does the "collect Iter<Item = Result> into Result<Vec>" trick.
-    let mut files = fs::read_dir("treasure")?
-        // Get the file metadata
-        .map(|dent: Result<DirEntry, _>| {
-            dent.and_then(|dent| Ok((dent.metadata()?, dent)))
-        })
-        // Only keep entries that are files or errors
-        .filter(|dent: &Result<(Metadata, DirEntry), _>| {
-            dent.as_ref().map(|(meta, _)| meta.is_file()).unwrap_or(true)
-        })
-        // Keep modify time for sorting
-        .map(|dent: Result<(Metadata, DirEntry), _> | {
-            dent.and_then(|(meta, dent)| Ok((meta.modified()?, dent)))
-        })
-        // Collect iter of Result into Result<Vec>,
-        // and return any error.
-        .collect::<Result<Vec<_>, _>>()?;
-
-    files.sort_by_key(|&(time, _)| time);
-
-    #[derive(Serialize)]
-    struct Treasure {
-        public_key: String,
-        image_url: String,
-        date_time: String,
-    }
-
-    let treasures = files.into_iter().take(10).map(|(time, dent)| {
-        let public_key = dent.file_name().into_string().expect("utf-8");
-        let image_url = format!("treasure-images/{}", public_key);
-        let date_time = chrono::DateTime::<chrono::Local>::from(time);
-        let date_time = date_time.to_rfc2822();
-        Treasure {
-            public_key,
-            image_url,
-            date_time,
-        }
-    }).collect();
-
-    #[derive(Serialize)]
-    struct TemplateData {
-        treasures: Vec<Treasure>,
-    }
-
-    let data = TemplateData {
-        treasures,
-    };
-
-    Ok(Template::render("recent", data))
-}
-
 fn main() {
     let css_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/static/css");
     let js_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/static/js");
@@ -260,11 +187,10 @@ fn main() {
         .mount("/", routes![
             root,
             static_page,
-            recent_page,
             create_treasure_key,
             plant_treasure_with_key,
             retrieve_treasure,
-            retrieve_treasure_image,
+            retrieve_treasure_pic,
             claim_treasure_with_key,
         ])
         .launch();
