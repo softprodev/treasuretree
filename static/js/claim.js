@@ -1,17 +1,8 @@
-import { initWasm } from "./wasm-init.js";
-import {
-    initSecretScanner,
-    treasureClaimUrl,
-    secretKey,
-    publicKey
-} from "./secret-scan.js";
+console.assert(typeof treasureClaimUrl != "undefined");
+console.assert(typeof secretKey != "undefined");
+console.assert(typeof publicKey != "undefined");
 
 console.assert(initWasm);
-
-initSecretScanner({
-    onBeginSecretScan: onBeginSecretScan,
-    onEndSecretScan: onEndSecretScan
-});
 
 let treasureClaimed = false;
 

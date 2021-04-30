@@ -1,18 +1,7 @@
-import {
-    initSecretScanner,
-    treasureClaimUrl,
-    secretKey,
-    publicKey
-} from "./secret-scan.js";
-
 console.assert(typeof treasureClaimUrl != "undefined");
 console.assert(typeof secretKey != "undefined");
 console.assert(typeof publicKey != "undefined");
 
-initSecretScanner({
-    onBeginSecretScan: onBeginSecretScan,
-    onEndSecretScan: onEndSecretScan
-});
 
 let treasureImageBlob = null;
 let treasurePlanted = false;
@@ -174,6 +163,8 @@ function maybeEnablePlantButton() {
     }
 }
 
+
+/* These handlers are required by secren-scan.js */
 
 function onBeginSecretScan() {
     plantButton.disabled = true;
