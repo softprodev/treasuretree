@@ -9,6 +9,15 @@ This file expects two global non-async functions to be defined elsewhere:
 
 */
 
+export {
+    initSecretScanner,
+    treasureClaimUrl,
+    secretKey,
+    publicKey
+};
+
+import { initWasm } from "./wasm-init.js";
+import QrScanner from "./lib/qr-scanner.min.js";
 
 /* These three globals are for access outside this file */
 
@@ -16,7 +25,16 @@ let treasureClaimUrl = null;
 let secretKey = null;
 let publicKey = null;
 
+let onBeginSecretScan = null;
+let onEndSecretScan = null;
 
+function initSecretScanner(callbacks) {
+    console.assert(callbacks.onBeginSecretScan);
+    console.assert(callbacks.onEndSecretScan);
+
+    onBeginSecretScan = callbacks.onBeginSecretScan;
+    onEndSecretScan = callbacks.onEndSecretScan;
+}
 
 /* The rest of the globals are implementation details */
 
