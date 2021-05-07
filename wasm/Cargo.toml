@@ -13,6 +13,7 @@ default = ["console_error_panic_hook"]
 [dependencies]
 wasm-bindgen = "0.2.63"
 base64 = "0.13.0"
+sha256 = "1.0.2"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
@@ -32,7 +33,6 @@ bech32 = "0.8.0"
 anyhow = { version = "1.0.40", default-features = false }
 
 rand = { version = "0.7.3", default-features = false, features = ["getrandom"] }
-getrandom = { version = "0.1.16", features = ["wasm-bindgen"] }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.13"

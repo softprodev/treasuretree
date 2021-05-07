@@ -27,7 +27,7 @@ body {
 
 a,
 h1, h2,
-input[type="button"],
+input,
 span.file-input > label {
     font-weight: bold;
     letter-spacing: 0.1em;
