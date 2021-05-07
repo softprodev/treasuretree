@@ -1,4 +1,5 @@
 import { initWasm } from "./wasm-init.js";
+import { accountSecretKey, initAccount } from "./account.js";
 import {
     initSecretScanner,
     treasureClaimUrl,
@@ -10,6 +11,10 @@ console.assert(initWasm);
 console.assert(typeof treasureClaimUrl != "undefined");
 console.assert(typeof treasureSecretKey != "undefined");
 console.assert(typeof treasurePublicKey != "undefined");
+
+initAccount({
+    onAccountSecretKeyChanged: onAccountSecretKeyChanged,
+});
 
 initSecretScanner({
     onBeginSecretScan: onBeginSecretScan,
@@ -119,23 +124,15 @@ plantButton.addEventListener("click", async () => {
             let reader = new FileReader();
             reader.readAsBinaryString(treasureImageBlob);
             reader.addEventListener("loadend", () => {
-                resolve(reader.result);
+                let encoded = btoa(reader.result);
+                resolve(encoded);
             });
         });
 
-        let treasureImageBuffer = await encoder;
-        let treasureImageEncoded = btoa(treasureImageBuffer);
-        
+        let treasureImageEncoded = await encoder;
         let wasm = await initWasm();
+        let signature = wasm.sign_with_secret_key(treasureSecretKey, treasureImageEncoded);
 
-        let treasureHash = wasm.get_hash(treasureImageBuffer);
-        let signature = wasm.sign_with_secret_key(treasureSecretKey, treasureHash);
-
-        console.log("hihihi");
-        console.log(treasureImageEncoded);
-        console.log(treasureHash);
-        console.log(signature);
-        
         let requestInfo = {
             image: treasureImageEncoded,
             public_key: treasurePublicKey,
@@ -176,13 +173,17 @@ function maybeEnablePlantButton() {
         treasureImageBlob &&
         treasureClaimUrl &&
         treasureSecretKey &&
-        treasurePublicKey;
+        treasurePublicKey &&
+        accountSecretKey;
 
     if (dataReady && !treasurePlanted) {
         plantButton.disabled = false;
     }
 }
 
+function onAccountSecretKeyChanged() {
+    maybeEnablePlantButton();
+}
 
 function onBeginSecretScan() {
     plantButton.disabled = true;

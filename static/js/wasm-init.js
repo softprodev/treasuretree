@@ -2,13 +2,14 @@ export { initWasm };
 
 import init, {
     set_panic_hook,
+    account_secret_key_to_public_key,
+    new_account_secret_key,
     sanity_check_url,
     secret_url_to_secret_key,
     secret_url_to_public_key,
     secret_key_to_public_key,
     secret_key_to_secret_url,
-    sign_with_secret_key,
-    get_hash,
+    sign_with_secret_key
 } from "../wasm/pkg/geonft_wasm.js";
 
 let wasm = null;
@@ -22,13 +23,14 @@ async function initWasm() {
 
     wasm = {
         set_panic_hook,
+        account_secret_key_to_public_key,
+        new_account_secret_key,
         sanity_check_url,
         secret_url_to_secret_key,
         secret_url_to_public_key,
         secret_key_to_public_key,
         secret_key_to_secret_url,
-        sign_with_secret_key,
-        get_hash,
+        sign_with_secret_key
     };
 
     wasm.set_panic_hook();
