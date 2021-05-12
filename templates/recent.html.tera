@@ -3,7 +3,7 @@
 
 {% block title %}
 
-Recently Planted Treasures
+Recently Planted Treasure
 
 {% endblock title %}
 
@@ -15,7 +15,15 @@ Recently Planted Treasures
 
 {% for treasure in treasures %}
 
-{% include "partials/treasure" %}
+<section>
+
+  <p><span class="breakable">{{ treasure.public_key }}</span></p>
+
+  <p>{{ treasure.date_time }}</p>
+
+  <p><img src="{{ treasure.image_url }}"></p>
+
+</section>
 
 {% endfor %}
 

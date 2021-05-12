@@ -86,32 +86,14 @@ useTestImageButton.addEventListener("click", async () => {
 
     fileSpinner.classList.remove("no-display");
 
-    function randomPathColor() {
-        let choices = [
-            0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330
-        ];
-        let idx = Math.floor(Math.random() * choices.length);
-        let hue = choices[idx];
-        let color = `hsl(${hue}, 75%, 75%)`;
-        return color;
-    }
-
     try {
-        let response = await fetch("images/coconut-tree.svg");
+        let response = await fetch("images/coconut-tree.png");
 
         if (!response.ok) {
             // TODO
         }
 
-        let svgText = await response.text();
-
-        let color = randomPathColor();
-        let pathReplacement = `path fill="${color}"`;
-        let svgText2 = svgText.replaceAll("path", pathReplacement);
-        console.log(pathReplacement);
-        console.log(svgText2);
-
-        let blob = new Blob([svgText2], {type : 'image/svg+xml'});
+        let blob = await response.blob();
 
         imageElt.src = URL.createObjectURL(blob);
         imageElt.classList.remove("no-display");
@@ -136,6 +118,9 @@ plantButton.addEventListener("click", async () => {
 
     plantSpinner.classList.remove("no-display");
 
+    console.log("accountSecretKey-----------------");
+    console.log(accountSecretKey);
+
     try {
         let encoder = new Promise((resolve) => {
             let reader = new FileReader();
@@ -156,8 +141,8 @@ plantButton.addEventListener("click", async () => {
         let treasureHash = wasm.get_hash(treasureImageEncoded);
         let treasureSignature = wasm.sign_with_treasure_secret_key(treasureSecretKey, treasureHash);
 
-        let accountSignature = "todo";
-
+        let accountSignature = wasm.sign_with_account_secret_key(accountSecretKey, treasurePublicKey);
+        
         let requestInfo = {
             account_public_key: accountPublicKey,
             treasure_public_key: treasurePublicKey,
@@ -165,7 +150,7 @@ plantButton.addEventListener("click", async () => {
             account_signature: accountSignature,
             treasure_signature: treasureSignature,
         };
-
+        
         let response = await fetch("api/plant", {
             method: "POST",
             headers: {

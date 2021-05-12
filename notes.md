@@ -1,6 +1,5 @@
 # todo
 
-- change hrp's of treasure keys to match scheme of account keys
 - add newtypes for treasure/account keys/signatures
 - run rustfmt and clippy
 - remove allow(unused) and clean up warnings

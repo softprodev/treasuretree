@@ -57,8 +57,6 @@ pub struct PlantResponse {
 ///
 /// Validation:
 ///
-/// - The treasure has not already been planted.
-/// - The image can be decoded and has an acceptable type.
 /// - The account key is valid.
 /// - The treasure key is valid.
 /// - The account signature.
@@ -73,9 +71,6 @@ pub struct PlantResponse {
 pub fn plant_treasure_with_key(plant_info: Json<PlantRequest>) -> Result<Json<PlantResponse>> {
     let treasure_key_decode = crypto::decode_treasure_public_key(&plant_info.treasure_public_key)?;
     let treasure_key_encode = crypto::encode_treasure_public_key(&treasure_key_decode)?;
-
-    // todo check the treasure doesn't exist
-    // todo validate image type
 
     let signature = crypto::decode_signature(&plant_info.treasure_signature)?;
 
@@ -140,7 +135,8 @@ pub struct ClaimResponse {
 
 #[post("/api/claim", format = "json", data = "<claim_info>")]
 pub fn claim_treasure_with_key(claim_info: Json<ClaimRequest>) -> Result<Json<ClaimResponse>> {
-    // verify if it's a valid Public key
+    // todo: claim treasure from scanning a qrcode
+
     let public_key_decode = crypto::decode_treasure_public_key(&claim_info.treasure_public_key)?;
     let public_key_encode = crypto::encode_treasure_public_key(&public_key_decode)?;
 
