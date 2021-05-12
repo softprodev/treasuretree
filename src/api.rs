@@ -42,7 +42,8 @@ pub struct PlantRequest {
     /// appended by the encoded treasure public key.
     pub account_signature: String,
     /// A base64-encoded signature by the treasure key of
-    /// the encoded account public key,
+    /// the string "plant",
+    /// appended by the encoded account public key,
     /// appended by the binary sha256 hash of the image.
     pub treasure_signature: String,
 }
@@ -68,8 +69,8 @@ pub struct PlantResponse {
 
 #[post("/api/plant", format = "json", data = "<plant_info>")]
 pub fn plant_treasure_with_key(plant_info: Json<PlantRequest>) -> Result<Json<PlantResponse>> {
-    let treasure_key_decode = crypto::decode_public_key(&plant_info.treasure_public_key)?;
-    let treasure_key_encode = crypto::encode_public_key(&treasure_key_decode)?;
+    let treasure_key_decode = crypto::decode_treasure_public_key(&plant_info.treasure_public_key)?;
+    let treasure_key_encode = crypto::encode_treasure_public_key(&treasure_key_decode)?;
 
     let signature = crypto::decode_signature(&plant_info.treasure_signature)?;
 
@@ -108,7 +109,8 @@ pub struct ClaimRequest {
     /// appended by the encoded treasure public key,
     account_signature: String,
     /// A base64-encoded signature by the treasure key of
-    /// the encoded account public key.
+    /// the string "claim",
+    /// appended by the encoded account public key.
     treasure_signature: String,
 }
 
@@ -134,8 +136,8 @@ pub struct ClaimResponse {
 #[post("/api/claim", format = "json", data = "<claim_info>")]
 pub fn claim_treasure_with_key(claim_info: Json<ClaimRequest>) -> Result<Json<ClaimResponse>> {
     // verify if it's a valid Public key
-    let public_key_decode = crypto::decode_public_key(&claim_info.treasure_public_key)?;
-    let public_key_encode = crypto::encode_public_key(&public_key_decode)?;
+    let public_key_decode = crypto::decode_treasure_public_key(&claim_info.treasure_public_key)?;
+    let public_key_encode = crypto::encode_treasure_public_key(&public_key_decode)?;
 
     let filename = format!("data/treasure/{}", public_key_encode);
     if !Path::new(&filename).is_file() {
@@ -144,7 +146,8 @@ pub fn claim_treasure_with_key(claim_info: Json<ClaimRequest>) -> Result<Json<Cl
         let message = public_key_decode.as_bytes();
         let signature = crypto::decode_signature(&claim_info.treasure_signature)?;
 
-        crypto::verify_signature(message, &signature, &public_key_decode)?;
+        // fixme
+        //crypto::verify_signature(message, &signature, &public_key_decode)?;
 
         // todo:
         // - claim success and transfer asset
