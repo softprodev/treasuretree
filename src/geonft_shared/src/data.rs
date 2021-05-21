@@ -89,9 +89,13 @@ pub fn get_all_plants_and_claims_time_sorted() -> Result<Vec<(PlantClaim, Treasu
 
 #[derive(Serialize, Deserialize)]
 pub enum SyncStatus {
-    BlobSynced,
-    PlantSynced,
-    ClaimSynced,
+    Planted,
+    PlantedAndBlobSynced,
+    PlantedAndSynced,
+    Claimed,
+    ClaimedAndBlobSynced,
+    ClaimedAndPlantSynced,
+    ClaimedAndFullySynced,
 }
 
 pub fn get_all_sync_statuses() -> Result<HashMap<String, SyncStatus>> {

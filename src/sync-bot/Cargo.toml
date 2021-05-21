@@ -1,5 +1,5 @@
 [package]
-name = "geonft_sync"
+name = "sync-bot"
 version = "0.1.0"
 edition = "2018"
 
