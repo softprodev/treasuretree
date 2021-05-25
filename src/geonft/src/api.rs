@@ -1,7 +1,6 @@
 use crate::crypto;
 use crate::treasure_qrcode;
 use anyhow::{bail, Result};
-use geonft_shared::data;
 use rocket_contrib::{json::Json, templates::Template};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -9,6 +8,7 @@ use std::fmt;
 use std::fs::{self, DirEntry, File, Metadata};
 use std::path::{Path, PathBuf};
 use treasure_qrcode::create_qr_code;
+use geonft_shared::data;
 
 #[derive(Debug, Serialize)]
 pub struct CreateResponse {

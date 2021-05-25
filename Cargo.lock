@@ -1400,7 +1400,6 @@ dependencies = [
 name = "geonft_solana"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "borsh 0.7.2",
  "borsh-derive 0.8.2",
  "serde",
@@ -1420,6 +1419,7 @@ dependencies = [
  "geonft_shared",
  "log 0.4.14",
  "serde_json",
+ "solana-cli-config",
  "solana-client",
  "solana-sdk",
 ]
