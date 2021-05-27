@@ -10,6 +10,7 @@ use std::time::Duration;
 use geonft_shared::data;
 
 mod solana;
+mod ipfs;
 
 fn main() -> Result<()> {
     env_logger::init();
@@ -74,8 +75,7 @@ fn execute_plan(plan: Plan) -> Result<()> {
 
     let config = solana::load_config()?;
     let client = solana::connect(&config)?;
-    let program_keypair = solana::get_program_keypair(&client)?;
-    let program_instance_account = solana::get_program_instance_account(&client, &config.keypair, &program_keypair)?;
+    solana::check_program(&client)?;
 
     let mut statuses = plan.statuses;
 
