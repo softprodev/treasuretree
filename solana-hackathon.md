@@ -30,6 +30,8 @@ it was a good opportunity to give it a try.
 - `time` and `anyhow` not building against Solana's `std`.
   `anyhow` can be built with `std` feature off, but that loses
   compatibility with the `Error` trait.
+- 4K BPF stack frames means some crates don't work,
+  including `ed25519-dalek`.
 
 
 ## Today's plan
@@ -1224,7 +1226,77 @@ Now we need to figure out what to do about our large stack frames,
 which were introduced when we added the `ed25519-dalek` dependency
 to our Solana program.
 
+I ask again in `#developer-support`
 
+> After adding ed25519-dalek to my solana program, I get non-fatal build errors like
+>
+> > Error: Function ZN209$LT$curve25519_dalek..window..LookupTableRadix256$LT$curve25519_dalek..backend..serial..curve_models..AffineNielsPoint$GT$$u20$as$u20$core..convert..From$LT$$RF$curve25519_dalek..edwards..EdwardsPoint$GT$$GT$4from17h1e9be112f934ec3bE Stack offset of -15848 exceeded max offset of -4096 by 11752 bytes, please minimize large stack variables
+>
+> And these seem to manifest as access violations when running the program. How can I deal with this? Can a tell the compiler to give me bigger maximum stack frames?
+
+And I go on:
+
+> Seems 4k frames are a hard limit.
+>
+> I'm not tied to ed25519. Is there another assymetric crypto crate that definitely doesn't create huge stack frames?
+>
+> I guess the sdk's keypair is ed25519 so I could use that
+>
+> But it is using ed25519-dalek internally! How does it do that?
+>
+> Sorry for rambling.
+
+I discover then that the `solana_sdk` crate,
+while it can be included in on-chain programs,
+needs a bunch of features turned off for that purpose,
+including `ed25519-dalek`.
+
+I get the sense we are not on the Solana happy-path,
+wanted to do our own signature verification on-chain,
+but our application architecture of first verifying
+signatures of our own transaction bundles off-chain,
+then passively syncing them to the chain,
+kind of demands it.
+
+I realize that the problem here is probably this architectural
+decision,
+but we are committed to it for now,
+and I think it can still work.
+
+We just have to choose an async crypto crate that
+doesn't create huge stack frames.
+
+In the meantime I file an [issue against `curve25519-dalek`][dalek-issue] asking
+about putting their lookup tables in boxes.
+
+[dalek-issue]: https://github.com/dalek-cryptography/curve25519-dalek/issues/355
+
+In the meantime I switch from ed25519 to ECDSa va the `k256` crate.
+It only takes a couple hours.
+
+And now I no longer have the access violation errors.
+I have new errors:
+
+```
+[2021-05-28T21:39:49Z INFO  geonft_sync] executing step UploadPlantToSolana for gtp1q05z4wcc9l0rah0ce2jpxhy2eyj2mrwljv7pmg2yced6fhgj9krtsxu8xa7
+[2021-05-28T21:39:49Z DEBUG solana_client::rpc_client] -32002 Transaction simulation failed: Error processing Instruction 0: Program failed to complete
+[2021-05-28T21:39:49Z DEBUG solana_client::rpc_client]   1: Program SMTdcH2EM33tSkbjW1oNxKRwfCCSaVoqTraoVYJAYsZ invoke [1]
+[2021-05-28T21:39:49Z DEBUG solana_client::rpc_client]   2: Program log: Geonft_solana entrypoint.
+[2021-05-28T21:39:49Z DEBUG solana_client::rpc_client]   3: Program log: plant info: PlantRequestHash { account_public_key: "gap1qt2ylqnejfe9znuvgn24lw240pcf
+g50jeg7l5cpmd6rdms6fdmqa6enham7", treasure_public_key: "gtp1q05z4wcc9l0rah0ce2jpxhy2eyj2mrwljv7pmg2yced6fhgj9krtsxu8xa7", treasure_hash: "0d6f3d0ad56a849d017
+8b6d2dcad56e4b2dcf95663349044d650d3cafd912c8e", account_signature: "rP/Vk5Q+/ofX+EpDSuTW5/nNWYvGL9u0YITIayA6/b1aD9ZRTW1LXvP55Zl1q6NDk7+5Im43bVLLVcwfZjgN2g=="
+, treasure_signature: "H90jsobBourHNdIBLKlQj5zM5T9JHxHPMNG7aZ+D/v4PO7uoMS4HrvDhG1qTZWbsUXl8e+2VykJPntv1HSTUPQ==" }
+[2021-05-28T21:39:49Z DEBUG solana_client::rpc_client]   4: Program SMTdcH2EM33tSkbjW1oNxKRwfCCSaVoqTraoVYJAYsZ consumed 200000 of 200000 compute units
+[2021-05-28T21:39:49Z DEBUG solana_client::rpc_client]   5: Program failed to complete: exceeded maximum number of instructions allowed (200000) at instructi
+on #29900
+[2021-05-28T21:39:49Z DEBUG solana_client::rpc_client]   6: Program SMTdcH2EM33tSkbjW1oNxKRwfCCSaVoqTraoVYJAYsZ failed: Program failed to complete
+[2021-05-28T21:39:49Z DEBUG solana_client::rpc_client]
+[2021-05-28T21:39:49Z ERROR geonft_sync] RPC response error -32002: Transaction simulation failed: Error processing Instruction 0: Program failed to complete
+ [6 log messages]
+```
+
+It seems our program is just running too much code now.
+That's a problem for tomorrow.
 
 
 # todo

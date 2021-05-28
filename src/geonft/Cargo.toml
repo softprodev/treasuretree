@@ -4,13 +4,9 @@ version = "0.1.0"
 authors = ["Brian Anderson <andersrb@gmail.com>"]
 edition = "2018"
 
-[features]
-default = ["std-errors"]
-std-errors = []
-
 [dependencies]
 geonft_data = { path = "../geonft_data" }
-geonft_nostd = { path = "../geonft_nostd", features = ["std-errors"] }
+geonft_nostd = { path = "../geonft_nostd" }
 geonft_shared = { path = "../geonft_shared" }
 
 anyhow = "1.0.40"
@@ -18,7 +14,6 @@ rocket = "0.4.9"
 serde = { version = "1.0.125", features = ["derive"] }
 serde_json = "1.0.64"
 rand = "0.7.3"
-ed25519-dalek = "1.0.1"
 bech32 = "0.8.0"
 base64 = "0.13.0"
 chrono = "0.4.19"
