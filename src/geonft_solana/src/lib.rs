@@ -1,6 +1,5 @@
-use anyhow::anyhow;
 use borsh::{BorshDeserialize, BorshSerialize};
-use geonft_data::{ClaimRequestSolana, GeonftRequestSolana, PlantRequestSolana};
+use geonft_data::{GeonftRequestSolana, PlantRequestSolana, ClaimRequestSolana};
 use geonft_nostd::crypto;
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -11,6 +10,7 @@ use solana_program::{
     pubkey::Pubkey,
 };
 use std::collections::HashMap;
+use anyhow::anyhow;
 
 // Declare and export the program's entrypoint
 entrypoint!(process_instruction);
@@ -55,8 +55,6 @@ pub fn plant_treasure_with_key(
     account: &AccountInfo,
     plant_info: PlantRequestSolana,
 ) -> Result<(), GeonftError> {
-    msg!("plant_treasure_with_key");
-/*
     let treasure_pubkey_bytes = &plant_info.treasure_public_key;
     let treasure_pubkey = crypto::public_key_from_bytes(&treasure_pubkey_bytes)?;
     let account_pubkey = crypto::public_key_from_bytes(&plant_info.account_public_key)?;
@@ -77,34 +75,26 @@ pub fn plant_treasure_with_key(
         &treasure_pubkey,
         &account_signature,
     )?;
-    
+
     let mut treasure_data = Treasure::try_from_slice(&account.data.borrow())?;
-    msg!("let mut treasure_data = Treasure::try_from_slice(&account.data.borrow())?;");
     treasure_data
         .plant_treasure
         .insert(treasure_pubkey_bytes.to_vec(), plant_info);
-    
+
     Ok(treasure_data.serialize(&mut &mut account.data.borrow_mut()[..])?)
-*/
-    Ok(())
 }
 
 pub fn claim_treasure_with_key(
     account: &AccountInfo,
-    claim_info: ClaimRequestSolana,
+    claim_info: ClaimRequestSolana
 ) -> Result<(), GeonftError> {
-    msg!("claim_treasure_with_key");
-/*    
     let treasure_pubkey_bytes = &claim_info.treasure_public_key;
     let treasure_pubkey = crypto::public_key_from_bytes(treasure_pubkey_bytes)?;
 
     let mut treasure_data = Treasure::try_from_slice(&account.data.borrow())?;
-    if !treasure_data
-        .plant_treasure
-        .contains_key(treasure_pubkey_bytes)
-    {
+    if !treasure_data.plant_treasure.contains_key(treasure_pubkey_bytes) {
         Err(GeonftError::AnyhowError(anyhow!("Treasure doesn't exist")))
-    } else { 
+    } else {
         let account_pubkey = crypto::public_key_from_bytes(&claim_info.account_public_key)?;
         let treasure_signature = crypto::signature_from_bytes(&claim_info.treasure_signature)?;
         let account_signature = crypto::signature_from_bytes(&claim_info.account_signature)?;
@@ -121,13 +111,9 @@ pub fn claim_treasure_with_key(
             &account_signature,
         )?;
 
-        treasure_data
-            .claim_treasure
-            .insert(treasure_pubkey_bytes.to_vec(), claim_info);
+        treasure_data.claim_treasure.insert(treasure_pubkey_bytes.to_vec(), claim_info);
         Ok(treasure_data.serialize(&mut &mut account.data.borrow_mut()[..])?)
     }
-*/
-    Ok(())
 }
 
 pub enum GeonftError {
