@@ -4,8 +4,8 @@ use alloc::vec::Vec;
 use anyhow::{bail, Result};
 
 //pub use ed25519_dalek::{Keypair, PublicKey, SecretKey, Signature, Signer};
-pub use k256::ecdsa::{SigningKey as SecretKey, VerifyingKey as PublicKey, Signature};
-pub use k256::ecdsa::signature::{Signer, Verifier, Signature as SignatureTrait};
+pub use k256::ecdsa::signature::{Signature as SignatureTrait, Signer, Verifier};
+pub use k256::ecdsa::{Signature, SigningKey as SecretKey, VerifyingKey as PublicKey};
 
 use base64;
 use bech32::{FromBase32, ToBase32, Variant};
@@ -43,9 +43,7 @@ pub fn generate_keypair(rng: &mut (impl CryptoRng + RngCore)) -> Keypair {
     let secret = k256::SecretKey::new(scalar);
     let secret = SecretKey::from(secret);
     let public = PublicKey::from(&secret);
-    Keypair {
-        secret, public,
-    }
+    Keypair { secret, public }
 }
 
 pub fn keypair_from_account_secret_key(key: &str) -> Result<Keypair> {
@@ -141,7 +139,8 @@ pub fn decode_account_public_key(key: &str) -> Result<PublicKey> {
 }
 
 pub fn decode_account_public_key_to_bytes(key: &str) -> Result<Vec<u8>> {
-    todo!()
+    let key = decode_public_key(key, ACCOUNT_PUBLIC_KEY_HRP)?;
+    Ok(key.to_bytes().to_vec())
 }
 
 pub fn decode_treasure_public_key(key: &str) -> Result<PublicKey> {
@@ -149,7 +148,8 @@ pub fn decode_treasure_public_key(key: &str) -> Result<PublicKey> {
 }
 
 pub fn decode_treasure_public_key_to_bytes(key: &str) -> Result<Vec<u8>> {
-    todo!()
+    let key = decode_public_key(key, TREASURE_PUBLIC_KEY_HRP)?;
+    Ok(key.to_bytes().to_vec())
 }
 
 fn decode_public_key(key: &str, hrp: &str) -> Result<PublicKey> {
