@@ -1,14 +1,14 @@
 #![allow(unused)]
 
 use anyhow::Result;
-use log::{info, error, warn};
+use log::{info, error};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::thread;
 use std::time::Duration;
 
-use geonft_data::{ClaimRequest, GeonftRequest, PlantRequest};
-use geonft_shared::io::{self, SyncStatus};
+use geonft_data::{GeonftRequestSolana, PlantRequestSolana, ClaimRequestSolana};
+use geonft_shared::io;
 
 mod ipfs;
 mod solana;
@@ -85,47 +85,26 @@ fn execute_plan(plan: Plan) -> Result<()> {
     for (pubkey, step) in plan.steps {
         info!("executing step {:?} for {}", step, pubkey);
 
-        let r = || -> Result<()> {
-            let status = statuses.get(&pubkey).cloned();
-            match step {
-                Step::UploadBlobToIpfs => {
-                    if status == None {
-                        // todo
-                        io::record_sync_status(&pubkey, SyncStatus::BlobSynced)?;
-                        statuses.insert(pubkey, SyncStatus::BlobSynced);
-                    } else {
-                        warn!("unexpected sync status: {:?}", status);
-                    }
-                },
-                Step::UploadPlantToSolana => {
-                    if status == Some(SyncStatus::BlobSynced) {
-                        solana::upload_plant(&pubkey, &config, &client,
+        match step {
+            Step::UploadPlantToSolana => {
+                let r = solana::upload_plant(&pubkey, &config, &client,
                                              &program_keypair,
-                                             &program_instance_account)?;
-                        io::record_sync_status(&pubkey, SyncStatus::PlantSynced)?;
-                        statuses.insert(pubkey, SyncStatus::PlantSynced);
-                    } else {
-                        warn!("unexpected sync status: {:?}", status);
-                    }
-                },
-                Step::UploadClaimToSolana => {
-                    if status == Some(SyncStatus::ClaimSynced) {
-                        solana::upload_claim(&pubkey, &config, &client,
-                                             &program_keypair,
-                                             &program_instance_account)?;
-                        io::record_sync_status(&pubkey, SyncStatus::ClaimSynced)?;
-                        statuses.insert(pubkey, SyncStatus::ClaimSynced);
-                    } else {
-                        warn!("unexpected sync status: {:?}", status);
-                    }
-                },
+                                             &program_instance_account);
+                if let Err(e) = r {
+                    error!("{}", e);
+                }
+
+                // TODO record SyncStatus
             }
-
-            Ok(())
-        }();
-
-        if let Err(e) = r {
-            error!("{}", e);
+            Step::UploadClaimToSolana => {
+                let r = solana::upload_claim(&pubkey, &config, &client,
+                                             &program_keypair,
+                                             &program_instance_account);
+                if let Err(e) = r {
+                    error!("{}", e);
+                }
+            }
+            _ => { /* todo */ }
         }
     }
 
