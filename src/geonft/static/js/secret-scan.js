@@ -45,19 +45,15 @@ async function initSecretScanner(callbacks) {
 
 let qrScanButton = document.getElementById("qrscan-button");
 let qrCancelButton = document.getElementById("qrscan-cancel-button");
+let treasureClaimUrlElt = document.getElementById("treasure-claim-url");
 let secretKeyInput = document.getElementById("treasure-secret-key");
+let publicKeyElt = document.getElementById("treasure-public-key");
 
 console.assert(qrScanButton);
 console.assert(qrCancelButton);
 console.assert(secretKeyInput);
-
-let treasureLinkPElt = document.getElementById("scan-treasure-link-p");
-let treasureLinkAElt = document.getElementById("scan-treasure-link-a");
-let treasureLinkSpanElt = document.getElementById("scan-treasure-link-span");
-
-console.assert(treasureLinkPElt);
-console.assert(treasureLinkAElt);
-console.assert(treasureLinkSpanElt);
+console.assert(treasureClaimUrlElt);
+console.assert(publicKeyElt);
 
 console.assert(initWasm);
 
@@ -74,7 +70,9 @@ qrScanButton.addEventListener("click", async () => {
     console.assert(onBeginSecretScan);
     onBeginSecretScan();
 
+    treasureClaimUrlElt.innerText = null;
     secretKeyInput.value = null;
+    publicKeyElt.innerText = null;
 
     treasureClaimUrl = null;
     treasureSecretKey = null;
@@ -106,7 +104,9 @@ qrScanButton.addEventListener("click", async () => {
             return;
         }
 
+        treasureClaimUrlElt.innerText = url;
         secretKeyInput.value = secretKey_;
+        publicKeyElt.innerText = publicKey_;
 
         treasureClaimUrl = url;
         treasureSecretKey = secretKey_;
@@ -129,8 +129,8 @@ qrScanButton.addEventListener("click", async () => {
         qrCancelButton.disabled = true;
         secretKeyInput.disabled = false;
         video.classList.add("no-display");
-
-        doEndSecretScan(wasm);
+        console.assert(onEndSecretScan);
+        onEndSecretScan();
     }
 
     qrScanner.start();
@@ -147,13 +147,16 @@ secretKeyInput.addEventListener("input", async () => {
     console.assert(onBeginSecretScan);
     onBeginSecretScan();
 
+    treasureClaimUrlElt.innerText = null;
+    publicKeyElt.innerText = null;
+
     treasureClaimUrl = null;
     treasureSecretKey = null;
     treasurePublicKey = null;
 
     let secretKey_ = secretKeyInput.value;
     let publicKey_ = wasm.treasure_secret_key_to_public_key(secretKey_);
-    let treasureClaimUrl_ = wasm.treasure_secret_key_to_secret_claim_url(secretKey_);
+    let treasureClaimUrl_ = wasm.treasure_secret_key_to_secret_url(secretKey_);
 
     if (publicKey_ == null || treasureClaimUrl_ == null) {
         console.error("unable to decode key");
@@ -161,11 +164,15 @@ secretKeyInput.addEventListener("input", async () => {
         return;
     }
 
+    publicKeyElt.innerText = publicKey_;
+    treasureClaimUrlElt.innerText = treasureClaimUrl_;
+
     treasureClaimUrl = treasureClaimUrl_;
     treasureSecretKey = secretKey_;
     treasurePublicKey = publicKey_;
 
-    doEndSecretScan(wasm);
+    console.assert(onEndSecretScan);
+    onEndSecretScan();
 });
 
 
@@ -189,27 +196,13 @@ async function loadFromUrl() {
         }
         
         secretKeyInput.value = secretKey_;
+        publicKeyElt.innerText = publicKey_;
+        treasureClaimUrlElt.innerText = url;
 
         treasureSecretKey = secretKey_;
         treasurePublicKey = publicKey_;
         treasureClaimUrl = url;
 
-        doEndSecretScan(wasm);
+        onEndSecretScan();    
     }    
-}
-
-function doEndSecretScan(wasm) {
-    if (treasurePublicKey) {
-        let treasureLinkUrl = wasm.treasure_public_key_to_treasure_url(treasurePublicKey);
-        let treasureAbbrev = wasm.treasure_public_key_to_abbrev(treasurePublicKey);
-
-        treasureLinkAElt.href = treasureLinkUrl;
-        treasureLinkSpanElt.innerText = treasureAbbrev;
-        treasureLinkPElt.classList.remove("no-display");
-    } else {
-        treasureLinkPElt.classList.add("no-display");
-    }
-
-    console.assert(onEndSecretScan);
-    onEndSecretScan();
 }

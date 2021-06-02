@@ -1,7 +1,3 @@
-extern crate alloc;
-
-use alloc::format;
-
 mod treasure_qrcode;
 mod utils;
 use geonft_nostd::crypto::{self, Keypair};
@@ -27,10 +23,7 @@ pub fn create_qrcode() -> Option<String> {
 
 #[wasm_bindgen]
 pub fn sanity_check_treasure_secret_url(url: &str) -> bool {
-    url.starts_with(crypto::TREASURE_SECRET_PLANT_URL_PREFIX)
-        || url.starts_with(crypto::TREASURE_SECRET_CLAIM_URL_PREFIX)
-        || url.starts_with(crypto::TREASURE_SECRET_PLANT_URL_PREFIX_LOCAL)
-        || url.starts_with(crypto::TREASURE_SECRET_CLAIM_URL_PREFIX_LOCAL)
+    url.starts_with(crypto::TREASURE_SECRET_URL_PREFIX)
 }
 
 #[wasm_bindgen]
@@ -61,10 +54,10 @@ pub fn treasure_secret_key_to_public_key(key: &str) -> Option<String> {
 }
 
 #[wasm_bindgen]
-pub fn treasure_secret_key_to_secret_claim_url(key: &str) -> Option<String> {
+pub fn treasure_secret_key_to_secret_url(key: &str) -> Option<String> {
     crypto::keypair_from_treasure_secret_key(key)
         .ok()
-        .map(|kp| crypto::keypair_to_treasure_secret_claim_url(&kp).ok())
+        .map(|kp| crypto::keypair_to_treasure_secret_url(&kp).ok())
         .flatten()
 }
 
@@ -151,16 +144,6 @@ fn new_keypair() -> Keypair {
 #[wasm_bindgen]
 pub fn get_hash(data: &str) -> Option<String> {
     crypto::get_hash(data).ok()
-}
-
-#[wasm_bindgen]
-pub fn treasure_public_key_to_treasure_url(key: &str) -> String {
-    format!("treasure/{}", key)
-}
-
-#[wasm_bindgen]
-pub fn treasure_public_key_to_abbrev(key: &str) -> String {
-    geonft_nostd::abbrev_pubkey(key)
 }
 
 #[wasm_bindgen]
