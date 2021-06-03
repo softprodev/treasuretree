@@ -100,7 +100,6 @@ pub struct ClaimResponse {
 
 #[post("/api/claim", format = "json", data = "<claim_info>")]
 pub fn claim_treasure_with_key(claim_info: Json<ClaimRequest>) -> Result<Json<ClaimResponse>> {
-    // todo: claim treasure from scanning a qrcode
     let treasure_key_decode = crypto::decode_treasure_public_key(&claim_info.treasure_public_key)?;
     let treasure_key_encode = crypto::encode_treasure_public_key(&treasure_key_decode)?;
 
@@ -137,7 +136,7 @@ pub fn claim_treasure_with_key(claim_info: Json<ClaimRequest>) -> Result<Json<Cl
     serde_json::to_writer(file, &claim_info.0)?;
 
     let return_url = format!(
-        "{host}/api/plant/{key}\n",
+        "{host}/treasure/{key}\n",
         host = "http://localhost:8000",
         key = treasure_key_encode
     );
@@ -146,4 +145,33 @@ pub fn claim_treasure_with_key(claim_info: Json<ClaimRequest>) -> Result<Json<Cl
         message: "Congrats! Treasure received!".to_string(),
         return_url,
     }))
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct TreasureRequest {
+    treasure_public_key: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct TreasureResponse {
+    treasure_exists: bool,
+}
+
+#[post("/api/exists", format = "json", data = "<treasure>")]
+pub fn treasure_exists(treasure: Json<TreasureRequest>) -> Result<Json<TreasureResponse>> {
+    let treasure_key_decode = crypto::decode_treasure_public_key(&treasure.treasure_public_key)?;
+    let treasure_key_encode = crypto::encode_treasure_public_key(&treasure_key_decode)?;
+
+    let filename = format!("{}/{}", io::PLANT_DIR, treasure_key_encode);
+    println!("filename: {}", filename);
+    
+    if !Path::new(&filename).is_file() {
+        Ok(Json(TreasureResponse {
+            treasure_exists: false
+        }))
+    } else {
+        Ok(Json(TreasureResponse {
+            treasure_exists: false
+        }))
+    }
 }
